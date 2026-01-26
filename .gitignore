@@ -1,0 +1,8 @@
+.gigaide/
+.idea/
+
+#app
+app/.gigaide/
+app/.idea/
+app/build/
+app/.gradle/
