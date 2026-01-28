@@ -35,7 +35,7 @@ public class App {
              var statement = connection.createStatement()) {
             statement.execute(sql);
         }
-        BaseRepository.dataSource = dataSource;
+        BaseRepository.setDataSource(dataSource);
 
         Javalin app = Javalin.create(config -> {
             config.bundledPlugins.enableDevLogging();
