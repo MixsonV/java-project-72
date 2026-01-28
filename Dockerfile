@@ -12,6 +12,8 @@ COPY . .
 
 RUN gradle --no-daemon shadowJar
 
+FROM eclipse-temurin:17-jre-alpine
+
 WORKDIR /app
 
 COPY --from=build /app/build/libs/app.jar .
