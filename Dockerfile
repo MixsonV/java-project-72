@@ -1,4 +1,4 @@
-FROM gradle:7.4.0-jdk17 AS build
+FROM gradle:8.13-jdk21 AS build
 
 WORKDIR /app
 
@@ -6,13 +6,13 @@ COPY app/gradle ./gradle
 COPY app/gradlew .
 COPY app/build.gradle.kts app/settings.gradle.kts ./
 
-RUN gradle --no-daemon dependencies
+RUN ./gradle --no-daemon dependencies
 
 COPY app/ .
 
-RUN gradle --no-daemon shadowJar
+RUN ./gradle --no-daemon shadowJar
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
