@@ -1,14 +1,14 @@
-FROM gradle:7.4.0-jdk17
+FROM gradle:7.4.0-jdk17 AS build
 
 WORKDIR /app
 
-COPY gradle ./gradle
-COPY gradlew .
-COPY build.gradle.kts settings.gradle.kts ./
+COPY app/gradle ./gradle
+COPY app/gradlew .
+COPY app/build.gradle.kts app/settings.gradle.kts ./
 
 RUN gradle --no-daemon dependencies
 
-COPY . .
+COPY app/ .
 
 RUN gradle --no-daemon shadowJar
 
@@ -18,6 +18,6 @@ WORKDIR /app
 
 COPY --from=build /app/build/libs/app.jar .
 
-EXPOSE 7071
+EXPOSE 8080
 
 CMD ["sh", "-c", "java -jar app.jar"]
