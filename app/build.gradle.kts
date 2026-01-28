@@ -40,6 +40,11 @@ tasks {
         archiveBaseName.set("app")
         archiveClassifier.set("")
         archiveVersion.set("")
+        mergeServiceFiles()
+    }
+
+    build {
+        dependsOn(shadowJar)
     }
 }
 

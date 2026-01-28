@@ -18,4 +18,6 @@ WORKDIR /app
 
 COPY --from=build /app/build/libs/app.jar .
 
+EXPOSE 7071
+
 CMD ["sh", "-c", "java -jar app.jar"]
