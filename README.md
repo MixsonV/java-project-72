@@ -7,4 +7,4 @@
 
 # Знакомьтесь - это анализатор страниц!
 
-### Deploy link: https://java-project-72-z69f.onrender.com
+### Приложение задеплоено на Render: https://java-project-72-z69f.onrender.com

@@ -2,8 +2,18 @@ FROM gradle:7.4.0-jdk17
 
 WORKDIR /app
 
-COPY /app .
+COPY gradle ./gradle
+COPY gradlew .
+COPY build.gradle.kts settings.gradle.kts ./
 
-RUN gradle installDist
+RUN gradle --no-daemon dependencies
 
-CMD ./app/build/install/app/bin/app
+COPY . .
+
+RUN gradle --no-daemon shadowJar
+
+WORKDIR /app
+
+COPY --from=build /app/build/libs/app.jar .
+
+CMD ["sh", "-c", "java -jar app.jar"]
