@@ -6,7 +6,7 @@ COPY app/gradle ./gradle
 COPY app/gradlew .
 COPY app/build.gradle.kts app/settings.gradle.kts ./
 
-RUN ./gradle --no-daemon dependencies
+RUN chmod +x gradlew && ./gradle --no-daemon dependencies
 
 COPY app/ .
 
