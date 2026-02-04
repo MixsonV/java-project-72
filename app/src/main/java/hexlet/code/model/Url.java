@@ -1,26 +1,47 @@
 package hexlet.code.model;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
-@ToString
-@AllArgsConstructor
-@NoArgsConstructor
-public class Url {
+public final class Url {
     private Long id;
     private String name;
 
     private LocalDateTime createdAt;
 
-    public Url(String newName, LocalDateTime newCreatedAt) {
-        this.name = newName;
-        this.createdAt = newCreatedAt;
+    public Url() { }
+
+    public Url(Long newId, String newName, LocalDateTime newCreatedAt) {
+        this.setId(newId);
+        this.setName(newName);
+        this.setCreatedAt(newCreatedAt);
     }
+
+    public Url(String newName) {
+        this.setName(newName);
+    }
+
+    public void setId(Long newId) {
+        this.id = newId;
+    }
+
+    public void setName(String newName) {
+        this.name = newName;
+    }
+
+    public void setCreatedAt(LocalDateTime newCreatedDate) {
+        this.createdAt = newCreatedDate;
+    }
+
+    public Long getId() {
+        return this.id;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return this.createdAt;
+    }
+
 }
