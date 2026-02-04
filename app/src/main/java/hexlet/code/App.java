@@ -10,12 +10,9 @@ import io.javalin.rendering.template.JavalinJte;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.FileNotFoundException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import com.zaxxer.hikari.HikariConfig;
@@ -56,24 +53,11 @@ public class App {
         return app;
     }
 
-    private static HikariDataSource createDataSource() throws IOException {
-        Properties properties = new Properties();
-        String environment = System.getProperty("app.env", "dev");
-
-        try (InputStream input = App.class.getClassLoader()
-                .getResourceAsStream("application-" + environment + ".properties")) {
-            if (input == null) {
-                throw new FileNotFoundException("Configuration file 'application-" + environment
-                        + ".properties' not found in classpath");
-            }
-            properties.load(input);
-        }
-
-        String url = properties.getProperty("jdbc.url");
-        String user = properties.getProperty("jdbc.username");
-        String password = properties.getProperty("jdbc.password");
-
+    private static HikariDataSource createDataSource() {
         HikariConfig config = new HikariConfig();
+        String url = System.getenv().getOrDefault("DATABASE_URL", "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1");
+        String user = System.getenv().getOrDefault("USERNAME", "myuser");
+        String password = System.getenv().getOrDefault("PASSWORD", "mypassword");
         config.setJdbcUrl(url);
         config.setUsername(user);
         config.setPassword(password);
@@ -84,10 +68,6 @@ public class App {
     private static int getPort() {
         String port = System.getenv().getOrDefault("PORT", "7071");
         return Integer.parseInt(port);
-    }
-
-    private static String getDatabaseUrl() {
-        return System.getenv().getOrDefault("DATABASE_URL", "jdbc:h2:mem:project");
     }
 
     private static String readResourceFile(String fileName) throws IOException {
