@@ -2,7 +2,6 @@ package hexlet.code;
 
 import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
-import gg.jte.resolve.ResourceCodeResolver;
 import hexlet.code.controller.UrlsController;
 import hexlet.code.util.NamedRoutes;
 import io.javalin.Javalin;
@@ -78,9 +77,7 @@ public class App {
     }
 
     private static TemplateEngine createTemplateEngine() {
-        ClassLoader classLoader = App.class.getClassLoader();
-        ResourceCodeResolver codeResolver = new ResourceCodeResolver("templates", classLoader);
-        return TemplateEngine.create(codeResolver, ContentType.Html);
+        return TemplateEngine.createPrecompiled(ContentType.Html);
     }
 
 }

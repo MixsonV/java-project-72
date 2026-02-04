@@ -3,6 +3,7 @@ plugins {
     id("org.sonarqube") version "7.2.2.6593"
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("io.freefair.lombok") version "8.13.1"
+    id("gg.jte.gradle") version "3.2.2"
     application
     checkstyle
 }
@@ -35,21 +36,45 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-tasks.test {
-    useJUnitPlatform()
+jte {
+    sourceDirectory.set(file("src/main/resources/templates").toPath())
+    targetDirectory.set(file("build/generated/jte").toPath())
+    contentType.set(gg.jte.ContentType.Html)
+    binaryStaticContent.set(false)
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir(layout.buildDirectory.dir("generated/jte"))
+        }
+    }
 }
 
 tasks {
+    compileJava {
+        dependsOn("generateJte")
+    }
+
     shadowJar {
         archiveBaseName.set("app")
         archiveClassifier.set("")
         archiveVersion.set("")
         mergeServiceFiles()
+        dependsOn("generateJte")
     }
 
     build {
         dependsOn(shadowJar)
     }
+}
+
+tasks.withType<Checkstyle> {
+    exclude("**/generated/**")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 sonar {
