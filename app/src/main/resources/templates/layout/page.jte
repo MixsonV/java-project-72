@@ -2,8 +2,116 @@
 @import hexlet.code.util.NamedRoutes
 @import hexlet.code.dto.BasePage
 @param Content content
-@param Content footer = null
 @param BasePage page = null
+
+<style>
+	.half-screen {
+		margin-left: 0px;
+		background-color: #303030;
+		height: 5%;
+	}
+
+	nav a {
+		margin-right: 20px;
+		color: white;
+	}
+
+	nav .page {
+		margin-left: 20px;
+		font-size: 20px;
+		font-weight: bold;
+	}
+
+	nav .main {
+		font-size: 16px;
+	}
+
+	nav .web {
+		font-size: 16px;
+	}
+
+	.message {
+		margin-top: 0px;
+		margin-left: 0px;
+		margin-bottom: 0px;
+		color: #072C63;
+		background-color: #909590;
+		height: 40px
+	}
+
+	body, html {
+		background-color: #4e5d94;
+	}
+
+	.box-main-page {
+		padding: 0% 2% 10% 2%;
+		background-color: #4e5d94;
+		color: white;
+
+		p.title {
+			font-size: 100px;
+			font-weight: bold;
+		}
+
+		p.description {
+			font-size: 20px;
+			font-weight: bold;
+		}
+
+		p.example {
+			font-size: 15px;
+		}
+
+		label {
+			width: 75%;
+		}
+
+		input.url {
+			height: 50px;
+			font-size: 30px;
+			background-color: white;
+			width: 100%;
+		}
+
+		input.btn1 {
+			height: 50px;
+			width: 20%;
+			font-size: 30px;
+			background-color: #7289da;
+		}
+	}
+
+	.table-page {
+		padding: 0% 2% 10% 2%;
+		background-color: #2b5b3366;
+		color: black;
+		font-size: 20px;
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		table, th, td {
+			border: 1px solid black;
+		}
+
+		th, td {
+			padding: 10px;
+			text-align: left;
+		}
+
+		.website {
+			font-size: 45px;
+			font-weight: bold;
+		}
+
+		.btn2 {
+			height: 50px;
+			background-color: #57cd6a;
+		}
+	}
+</style>
 
 <!doctype html>
 <html lang="en">
@@ -20,16 +128,19 @@
                 crossorigin="anonymous"></script>
     </head>
     <body>
-        @if(page != null && page.getFlash() != null)
-			<p>${page.getFlash()}</p>
-		@endif
+    	<header class="half-screen">
+			<nav>
+				<a href="${NamedRoutes.rootPath()}" class="page">Анализатор страниц</a>
+				<a href="${NamedRoutes.rootPath()}" class="main">Главная страница</a>
+				<a href="${NamedRoutes.urlsPath()}" class="web">Список сайтов</a>
+			</nav>
+		</header>
+
 		<main>
+			@if(page != null && page.getFlash() != null)
+				<p>${page.getFlash()}</p>
+			@endif
 			${content}
 		</main>
-		@if(footer != null)
-			<div class="footer">
-				${footer}
-			</div>
-		@endif
     </body>
 </html>

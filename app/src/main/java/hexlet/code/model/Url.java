@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 public final class Url {
     private Long id;
     private String name;
-
     private LocalDateTime createdAt;
+    private UrlCheck lastCheck;
 
     public Url() { }
 
@@ -14,6 +14,13 @@ public final class Url {
         this.setId(newId);
         this.setName(newName);
         this.setCreatedAt(newCreatedAt);
+    }
+
+    public Url(Long newId, String newName, LocalDateTime newCreatedAt, UrlCheck newLastCheck) {
+        this.setId(newId);
+        this.setName(newName);
+        this.setCreatedAt(newCreatedAt);
+        this.setLastCheck(newLastCheck);
     }
 
     public Url(String newName) {
@@ -32,6 +39,10 @@ public final class Url {
         this.createdAt = newCreatedDate;
     }
 
+    public void setLastCheck(UrlCheck newLastCheck) {
+        this.lastCheck = newLastCheck;
+    }
+
     public Long getId() {
         return this.id;
     }
@@ -44,4 +55,7 @@ public final class Url {
         return this.createdAt;
     }
 
+    public UrlCheck getLastCheck() {
+        return this.lastCheck;
+    }
 }

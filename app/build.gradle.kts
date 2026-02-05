@@ -6,6 +6,7 @@ plugins {
     id("gg.jte.gradle") version "3.2.2"
     application
     checkstyle
+    jacoco
 }
 
 group = "hexlet.code"
@@ -29,10 +30,14 @@ dependencies {
     implementation("io.javalin:javalin-bundle:6.7.0")
     implementation("io.javalin:javalin-rendering:6.7.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.3")
+    implementation("org.jsoup:jsoup:1.16.1")
+    implementation(platform("com.konghq:unirest-java-bom:4.5.1"))
+    implementation("com.konghq:unirest-java-core")
 
     testImplementation("org.assertj:assertj-core:3.27.3")
     testImplementation(platform("org.junit:junit-bom:5.12.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.9.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -82,9 +87,24 @@ tasks.test {
     useJUnitPlatform()
 }
 
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}
+
 sonar {
     properties {
         property("sonar.projectKey", "MixsonV_java-project-72")
         property("sonar.organization", "mixsonv")
+        property ("sonar.java.coveragePlugin", "jacoco")
+        property ("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
     }
 }

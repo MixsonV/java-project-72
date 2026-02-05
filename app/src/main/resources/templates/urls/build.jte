@@ -17,23 +17,18 @@
 			</div>
 		@endif
 
-	   <form action="${NamedRoutes.urlsPath()}" method="post">
-		   <p>
-			   <h1>Анализатор страниц</h1>
-			   <h3>Бесплатно проверяйте сайты на SEO пригодность</h3>
-		   </p>
-		   <label>
-			  <input type="text" required name="url" placeholder="ссылка"/>
-		   </label>
-			  <input type="submit" value="Проверить"/>
-		   <p>
-			  Пример: https://www.example.com
-		   </p>
+		<form action="${NamedRoutes.urlsPath()}" method="post">
+			<div class="box-main-page">
+				<p class="title">Анализатор страниц</p>
+				<p class="description">Бесплатно проверяйте сайты на SEO пригодность</p>
+
+				<label>
+					<input class="url" type="text" required name="url" placeholder="ссылка"/>
+				</label>
+
+				<input class="btn1" type="submit" value="Проверить"/>
+				<p class="example">Пример: https://www.example.com</p>
+			</div>
 	   </form>
-    `,
-    footer = @`
-        <p>
-            <a href="${NamedRoutes.urlsPath()}">К списку страниц</a>
-        </p>
     `
 )
