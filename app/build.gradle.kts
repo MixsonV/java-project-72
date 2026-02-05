@@ -71,6 +71,11 @@ tasks {
 
 tasks.withType<Checkstyle> {
     exclude("**/generated/**")
+    exclude("**/build/generated/**")
+}
+
+tasks.checkstyleMain {
+    mustRunAfter(tasks.precompileJte)
 }
 
 tasks.test {
