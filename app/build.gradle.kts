@@ -114,10 +114,6 @@ tasks.jacocoTestReport {
     }
 }
 
-tasks.named("sonar") {
-    dependsOn(tasks.test, tasks.jacocoTestReport)
-}
-
 sonar {
     properties {
         property("sonar.projectKey", "MixsonV_java-project-72")
@@ -131,4 +127,8 @@ sonar {
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
         property("sonar.coverage.exclusions", "**/*Test.java,**/*Tests.java,**/dto/**,**/model/**,**/util/**")
     }
+}
+
+tasks.named("sonarqube") {
+    dependsOn(tasks.jacocoTestReport)
 }

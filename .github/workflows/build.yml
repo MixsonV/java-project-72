@@ -36,5 +36,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          cd app && ./gradlew clean test jacocoTestReport sonar --info
+          cd app
+          ./gradlew clean test jacocoTestReport sonar --info
           ls -la build/reports/jacoco/test/
