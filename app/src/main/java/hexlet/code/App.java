@@ -53,6 +53,24 @@ public class App {
         return app;
     }
 
+    public static Javalin getApp(HikariDataSource dataSource) {
+        BaseRepository.setDataSource(dataSource);
+
+        Javalin app = Javalin.create(config -> {
+            config.bundledPlugins.enableDevLogging();
+            config.fileRenderer(new JavalinJte(createTemplateEngine()));
+        });
+
+        app.get(NamedRoutes.rootPath(), UrlsController::build);
+        app.post(NamedRoutes.urlsPath(), UrlsController::create);
+
+        app.get(NamedRoutes.urlsPath(), UrlsController::index);
+        app.get(NamedRoutes.urlPath("{id}"), UrlsController::show);
+        app.post("/urls/{id}/checks", UrlsController::createCheck);
+
+        return app;
+    }
+
     private static HikariDataSource createDataSource() {
         HikariConfig config = new HikariConfig();
         String url = System.getenv().getOrDefault("DATABASE_URL", "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1");

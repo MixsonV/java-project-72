@@ -13,23 +13,12 @@ public final class UrlCheck {
 
     public UrlCheck() { }
 
-    public UrlCheck(int newStatusCode, String newTitle, String newH1, String newDescription, Long newUrlId) {
+    public UrlCheck(Long newUrlId, int newStatusCode, String newTitle, String newH1, String newDescription) {
+        this.setUrlId(newUrlId);
         this.setStatusCode(newStatusCode);
         this.setTitle(newTitle);
         this.setH1(newH1);
         this.setDescription(newDescription);
-        this.setUrlId(newUrlId);
-    }
-
-    public UrlCheck(Long newId, int newStatusCode, String newTitle, String newH1, String newDescription,
-                    Long newUrlId, LocalDateTime newCreatedAt) {
-        this.setId(newId);
-        this.setStatusCode(newStatusCode);
-        this.setTitle(newTitle);
-        this.setH1(newH1);
-        this.setDescription(newDescription);
-        this.setUrlId(newUrlId);
-        this.setCreatedAt(newCreatedAt);
     }
 
     public void setId(Long newId) {
