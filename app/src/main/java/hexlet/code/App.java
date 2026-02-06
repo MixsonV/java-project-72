@@ -71,7 +71,7 @@ public class App {
         return app;
     }
 
-    private static HikariDataSource createDataSource() {
+    public static HikariDataSource createDataSource() {
         HikariConfig config = new HikariConfig();
         String url = System.getenv().getOrDefault("DATABASE_URL", "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1");
         String user = System.getenv().getOrDefault("USERNAME", "myuser");
@@ -83,19 +83,19 @@ public class App {
         return new HikariDataSource(config);
     }
 
-    private static int getPort() {
+    public static int getPort() {
         String port = System.getenv().getOrDefault("PORT", "7071");
         return Integer.parseInt(port);
     }
 
-    private static String readResourceFile(String fileName) throws IOException {
+    public static String readResourceFile(String fileName) throws IOException {
         var inputStream = App.class.getClassLoader().getResourceAsStream(fileName);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             return reader.lines().collect(Collectors.joining("\n"));
         }
     }
 
-    private static TemplateEngine createTemplateEngine() {
+    public static TemplateEngine createTemplateEngine() {
         return TemplateEngine.createPrecompiled(ContentType.Html);
     }
 
