@@ -85,6 +85,12 @@ tasks.checkstyleMain {
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
 }
 
 jacoco {
@@ -99,19 +105,17 @@ tasks.jacocoTestReport {
         csv.required.set(false)
     }
 
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.map {
-            fileTree(it).apply {
-                exclude(
-                    "**/dto/**",
-                    "**/model/**",
-                    "**/util/**",
-                    "**/*Test.class",
-                    "**/*Tests.class"
-                )
-            }
-        }))
-    }
+    classDirectories.setFrom(
+        fileTree("build/classes/java/main") {
+            exclude(
+                "**/dto/**",
+                "**/model/**",
+                "**/util/**",
+                "**/*Test.class",
+                "**/*Tests.class"
+            )
+        }
+    )
 }
 
 sonar {
