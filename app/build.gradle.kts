@@ -106,11 +106,9 @@ tasks.jacocoTestReport {
     }
 
     classDirectories.setFrom(
-        fileTree("build/classes/java/main") {
+        fileTree("build/classes/java/main").apply {
             exclude(
-                "**/dto/**",
-                "**/model/**",
-                "**/util/**",
+                "**/App.class",
                 "**/*Test.class",
                 "**/*Tests.class"
             )

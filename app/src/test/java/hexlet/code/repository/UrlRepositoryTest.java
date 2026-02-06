@@ -3,6 +3,7 @@ package hexlet.code.repository;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import hexlet.code.model.Url;
+import hexlet.code.model.UrlCheck;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UrlRepositoryTest {
+    private static final int STATUS_CODE_OK = 200;
+    private static final int STATUS_CODE_NOT_FOUND = 404;
     private static final long MAGIC_NUMBER = 999999L;
     private HikariDataSource dataSource;
 
@@ -28,6 +31,7 @@ class UrlRepositoryTest {
         dataSource = new HikariDataSource(hikariConfig);
 
         UrlRepository.setDataSource(dataSource);
+        UrlCheckRepository.setDataSource(dataSource);
 
         var schema = getClass().getClassLoader().getResource("schema.sql");
         var file = new File(schema.getFile());
@@ -48,41 +52,66 @@ class UrlRepositoryTest {
     }
 
     @Test
-    void testSaveAndGetUrl() throws SQLException {
+    void testSaveUrlCheck() throws SQLException {
         Url url = new Url("https://example.com");
         UrlRepository.save(url);
 
-        Optional<Url> found = UrlRepository.findById(url.getId());
+        UrlCheck check = new UrlCheck(url.getId(), STATUS_CODE_OK, "Test Title",
+                "Test H1", "Test Description");
+        UrlCheckRepository.saveUrlCheck(check);
+
+        Optional<UrlCheck> found = UrlCheckRepository.findLastCheckByUrlId(url.getId());
         assertThat(found).isPresent();
-        assertThat(found.get().getName()).isEqualTo("https://example.com");
+        assertThat(found.get().getStatusCode()).isEqualTo(STATUS_CODE_OK);
+        assertThat(found.get().getTitle()).isEqualTo("Test Title");
     }
 
     @Test
-    void testFindAllUrls() throws SQLException {
-        Url url1 = new Url("https://example1.com");
-        Url url2 = new Url("https://example2.com");
-        UrlRepository.save(url1);
-        UrlRepository.save(url2);
-
-        List<Url> urls = UrlRepository.getEntities();
-        assertThat(urls).hasSize(2);
-    }
-
-    @Test
-    void testExistsByName() throws SQLException {
-        Url url = new Url("https://exists.com");
+    void testFindLastCheckByUrlId() throws SQLException {
+        Url url = new Url("https://example.com");
         UrlRepository.save(url);
 
-        boolean exists = UrlRepository.existsByName("https://exists.com");
-        assertThat(exists).isTrue();
+        UrlCheck check1 = new UrlCheck(url.getId(), STATUS_CODE_OK, "Title 1",
+                "H1 1", "Desc 1");
+        UrlCheck check2 = new UrlCheck(url.getId(), STATUS_CODE_NOT_FOUND, "Title 2",
+                "H1 2", "Desc 2");
 
-        boolean notExists = UrlRepository.existsByName("https://not-exists.com");
-        assertThat(notExists).isFalse();
+        UrlCheckRepository.saveUrlCheck(check1);
+        UrlCheckRepository.saveUrlCheck(check2);
+
+        Optional<UrlCheck> lastCheck = UrlCheckRepository.findLastCheckByUrlId(url.getId());
+        assertThat(lastCheck).isPresent();
+        assertThat(lastCheck.get().getStatusCode()).isEqualTo(STATUS_CODE_NOT_FOUND);
     }
 
     @Test
-    void testFindByIdNotFound() throws SQLException {
-        Optional<Url> notFound = UrlRepository.findById(MAGIC_NUMBER);
+    void testFindAllChecksByUrlId() throws SQLException {
+        Url url = new Url("https://example.com");
+        UrlRepository.save(url);
+
+        UrlCheck check1 = new UrlCheck(url.getId(), STATUS_CODE_OK, "Title 1",
+                "H1 1", "Desc 1");
+        UrlCheck check2 = new UrlCheck(url.getId(), STATUS_CODE_NOT_FOUND, "Title 2",
+                "H1 2", "Desc 2");
+
+        UrlCheckRepository.saveUrlCheck(check1);
+        UrlCheckRepository.saveUrlCheck(check2);
+
+        List<UrlCheck> checks = UrlCheckRepository.findAllChecksByUrlId(url.getId());
+        assertThat(checks).hasSize(2);
+        assertThat(checks.get(0).getStatusCode()).isIn(STATUS_CODE_OK, STATUS_CODE_NOT_FOUND);
+    }
+
+    @Test
+    void testFindLastCheckByUrlIdNotFound() throws SQLException {
+        Optional<UrlCheck> notFound = UrlCheckRepository.findLastCheckByUrlId(MAGIC_NUMBER);
         assertThat(notFound).isEmpty();
     }
+
+    @Test
+    void testFindAllChecksByUrlIdNotFound() throws SQLException {
+        List<UrlCheck> checks = UrlCheckRepository.findAllChecksByUrlId(MAGIC_NUMBER);
+        assertThat(checks).isEmpty();
+    }
+
 }
