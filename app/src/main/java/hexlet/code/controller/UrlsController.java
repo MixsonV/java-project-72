@@ -52,7 +52,7 @@ public class UrlsController {
             ctx.render("urls/index.jte", model("page", page));
         } catch (SQLException e) {
             ctx.status(STATUS_CODE_500).result("Server error occurred");
-            e.printStackTrace();
+            log.error("Ошибка при получении списка сайтов", e);
         }
     }
 
@@ -80,8 +80,6 @@ public class UrlsController {
                 baseUrl += ":" + url.getPort();
             }
 
-            System.out.println("Base URL: " + baseUrl);
-
             if (UrlRepository.existsByName(baseUrl)) {
                 ctx.sessionAttribute("flash", "Сайт уже существует");
                 ctx.redirect(NamedRoutes.rootPath());
@@ -89,7 +87,7 @@ public class UrlsController {
             } else {
                 Url urlEntity = new Url(baseUrl);
                 UrlRepository.save(urlEntity);
-                ctx.sessionAttribute("flash", "Сайт успешно добавлена");
+                ctx.sessionAttribute("flash", "Сайт успешно добавлен");
             }
         } catch (URISyntaxException | MalformedURLException e) {
             ctx.sessionAttribute("flash", "Некорректный URL");
@@ -107,7 +105,7 @@ public class UrlsController {
         try {
             optionalUrl = UrlRepository.findById(id);
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Ошибка при поиске сайта по ID: {}", id, e);
             ctx.status(STATUS_CODE_500).result("Error in database");
             return;
         }
@@ -126,7 +124,7 @@ public class UrlsController {
             saveUrlCheck(newCheck);
             ctx.redirect("/urls/" + id);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Ошибка при проверке сайта: {}", url.getName(), e);
             ctx.status(STATUS_CODE_500).result("Error during verification URL");
         }
     }

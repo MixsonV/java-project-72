@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AppTest {
     private static final int STATUS_CODE_OK = 200;
+    private static final int STATUS_CODE_NOT_FOUND = 404;
     private static final int MAGIC_NUMBER_YEAR = 2023;
     private static final int MAGIC_NUMBER_MONTH = 10;
     private static final int MAGIC_NUMBER_DAY = 30;
@@ -174,16 +175,15 @@ class AppTest {
 
             JavalinTest.test(app, (server, client) -> {
                 var requestBody = "url=" + inputUrl;
-                assertThat(client.post("/urls", requestBody).code()).isEqualTo(STATUS_CODE_OK);
-
-                var response = client.get("/urls");
+                var response = client.post("/urls", requestBody);
                 assertThat(response.code()).isEqualTo(STATUS_CODE_OK);
-                assertThat(response.body().string())
-                        .contains(inputUrl);
 
-                var actualUrl = TestUtils.getUrlByName(dataSource, inputUrl);
+                var urlsPage = client.get("/urls").body().string();
+                assertThat(urlsPage).contains("https://ru.hexlet.io");
+
+                var actualUrl = TestUtils.getUrlByName(dataSource, "https://ru.hexlet.io");
                 assertThat(actualUrl).isNotNull();
-                assertThat(actualUrl.get("name").toString()).isEqualTo(inputUrl);
+                assertThat(actualUrl.get("name").toString()).isEqualTo("https://ru.hexlet.io");
             });
         }
     }
@@ -192,7 +192,10 @@ class AppTest {
     class UrlCheckTest {
 
         @Test
-        void testStore() {
+        void testStore() throws IOException {
+            MockResponse mockResponse = new MockResponse().setBody(readFixture("index.html"));
+            mockServer.enqueue(mockResponse);
+
             String url = mockServer.url("/").toString().replaceAll("/$", "");
 
             JavalinTest.test(app, (server, client) -> {
@@ -201,11 +204,10 @@ class AppTest {
 
                 var actualUrl = TestUtils.getUrlByName(dataSource, url);
                 assertThat(actualUrl).isNotNull();
-                System.out.println("\n!!!!!");
-                System.out.println(actualUrl);
-
-                System.out.println("\n");
                 assertThat(actualUrl.get("name").toString()).isEqualTo(url);
+
+                MockResponse checkResponse = new MockResponse().setBody(readFixture("index.html"));
+                mockServer.enqueue(checkResponse);
 
                 client.post("/urls/" + actualUrl.get("id") + "/checks");
 
@@ -216,6 +218,96 @@ class AppTest {
                 assertThat(actualCheck.get("title")).isEqualTo("Test page");
                 assertThat(actualCheck.get("h1")).isEqualTo("Do not expect a miracle, miracles yourself!");
                 assertThat(actualCheck.get("description")).isEqualTo("statements of great people");
+            });
+        }
+    }
+
+    @Nested
+    class UrlControllerAdditionalTests {
+
+        @Test
+        void testCreateUrlWithoutProtocol() {
+            JavalinTest.test(app, (server, client) -> {
+                client.post("/urls", "url=example.com");
+
+                var urlsPage = client.get("/urls").body().string();
+                assertThat(urlsPage).doesNotContain("example.com");
+            });
+        }
+
+        @Test
+        void testCreateDuplicateUrl() {
+            JavalinTest.test(app, (server, client) -> {
+                client.post("/urls", "url=https://duplicate.com");
+                client.post("/urls", "url=https://duplicate.com");
+
+                var urlsPage = client.get("/urls").body().string();
+                assertThat(urlsPage.split("https://duplicate.com", -1).length - 1).isEqualTo(1);
+            });
+        }
+
+        @Test
+        void testCreateInvalidUrlFormat() {
+            JavalinTest.test(app, (server, client) -> {
+                client.post("/urls", "url=not-a-valid-url");
+
+                var urlsPage = client.get("/urls").body().string();
+                assertThat(urlsPage).doesNotContain("not-a-valid-url");
+            });
+        }
+
+        @Test
+        void testCreateUrlWithHttpProtocol() {
+            JavalinTest.test(app, (server, client) -> {
+                client.post("/urls", "url=http://test.com");
+
+                var urlsPage = client.get("/urls").body().string();
+                assertThat(urlsPage).contains("http://test.com");
+            });
+        }
+
+        @Test
+        void testCreateUrlWithPort() {
+            JavalinTest.test(app, (server, client) -> {
+                client.post("/urls", "url=https://example.com:8080");
+
+                var urlsPage = client.get("/urls").body().string();
+                assertThat(urlsPage).contains("https://example.com:8080");
+            });
+        }
+
+        @Test
+        void testShowNonExistentUrl() {
+            JavalinTest.test(app, (server, client) -> {
+                var response = client.get("/urls/999999");
+                assertThat(response.code()).isEqualTo(STATUS_CODE_NOT_FOUND);
+            });
+        }
+
+        @Test
+        void testCreateCheckForNonExistentUrl() {
+            JavalinTest.test(app, (server, client) -> {
+                var response = client.post("/urls/999999/checks");
+                assertThat(response.code()).isEqualTo(STATUS_CODE_NOT_FOUND);
+            });
+        }
+
+        @Test
+        void testCreateCheckForValidUrl() {
+            JavalinTest.test(app, (server, client) -> {
+                String mockUrl = mockServer.url("/").toString().replaceAll("/$", "");
+
+                mockServer.enqueue(new MockResponse().setBody(readFixture("index.html")));
+                client.post("/urls", "url=" + mockUrl);
+
+                var url = TestUtils.getUrlByName(dataSource, mockUrl);
+
+                mockServer.enqueue(new MockResponse().setBody(readFixture("index.html")));
+                client.post("/urls/" + url.get("id") + "/checks");
+
+                var showPage = client.get("/urls/" + url.get("id")).body().string();
+                assertThat(showPage).contains(mockUrl);
+                assertThat(showPage).contains("Test page");
             });
         }
     }

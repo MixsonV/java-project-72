@@ -98,13 +98,37 @@ tasks.jacocoTestReport {
         html.required.set(true)
         csv.required.set(false)
     }
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.map {
+            fileTree(it).apply {
+                exclude(
+                    "**/dto/**",
+                    "**/model/**",
+                    "**/util/**",
+                    "**/*Test.class",
+                    "**/*Tests.class"
+                )
+            }
+        }))
+    }
+}
+
+tasks.named("sonar") {
+    dependsOn(tasks.test, tasks.jacocoTestReport)
 }
 
 sonar {
     properties {
         property("sonar.projectKey", "MixsonV_java-project-72")
         property("sonar.organization", "mixsonv")
-        property ("sonar.java.coveragePlugin", "jacoco")
-        property ("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.sources", "src/main/java")
+        property("sonar.tests", "src/test/java")
+        property("sonar.java.binaries", "build/classes/java/main")
+        property("sonar.java.test.binaries", "build/classes/java/test")
+        property("sonar.junit.reportPaths", "build/test-results/test")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+        property("sonar.coverage.exclusions", "**/*Test.java,**/*Tests.java,**/dto/**,**/model/**,**/util/**")
     }
 }
