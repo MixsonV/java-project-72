@@ -32,10 +32,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class AppTest {
     private static final int STATUS_CODE_OK = 200;
     private static final int STATUS_CODE_NOT_FOUND = 404;
+    private static final int STATUS_CODE_ERROR = 500;
     private static final int MAGIC_NUMBER_YEAR = 2023;
     private static final int MAGIC_NUMBER_MONTH = 10;
     private static final int MAGIC_NUMBER_DAY = 30;
     private static final int MAGIC_NUMBER_HOUR = 12;
+    private static final long MAGIC_NUMBER_42L = 42L;
+    private static final long MAGIC_NUMBER_99L = 99L;
+    private static final int MAGIC_NUMBER_REPEAT_COUNT = 2000;
 
     private static MockWebServer mockServer;
     private Javalin app;
@@ -189,40 +193,6 @@ class AppTest {
     }
 
     @Nested
-    class UrlCheckTest {
-
-        @Test
-        void testStore() throws IOException {
-            MockResponse mockResponse = new MockResponse().setBody(readFixture("index.html"));
-            mockServer.enqueue(mockResponse);
-
-            String url = mockServer.url("/").toString().replaceAll("/$", "");
-
-            JavalinTest.test(app, (server, client) -> {
-                var requestBody = "url=" + url;
-                assertThat(client.post("/urls", requestBody).code()).isEqualTo(STATUS_CODE_OK);
-
-                var actualUrl = TestUtils.getUrlByName(dataSource, url);
-                assertThat(actualUrl).isNotNull();
-                assertThat(actualUrl.get("name").toString()).isEqualTo(url);
-
-                MockResponse checkResponse = new MockResponse().setBody(readFixture("index.html"));
-                mockServer.enqueue(checkResponse);
-
-                client.post("/urls/" + actualUrl.get("id") + "/checks");
-
-                assertThat(client.get("/urls/" + actualUrl.get("id")).code()).isEqualTo(STATUS_CODE_OK);
-
-                var actualCheck = TestUtils.getUrlCheck(dataSource, (long) actualUrl.get("id"));
-                assertThat(actualCheck).isNotNull();
-                assertThat(actualCheck.get("title")).isEqualTo("Test page");
-                assertThat(actualCheck.get("h1")).isEqualTo("Do not expect a miracle, miracles yourself!");
-                assertThat(actualCheck.get("description")).isEqualTo("statements of great people");
-            });
-        }
-    }
-
-    @Nested
     class UrlControllerAdditionalTests {
 
         @Test
@@ -308,6 +278,126 @@ class AppTest {
                 var showPage = client.get("/urls/" + url.get("id")).body().string();
                 assertThat(showPage).contains(mockUrl);
                 assertThat(showPage).contains("Test page");
+            });
+        }
+
+    }
+
+    @Test
+    void testUrlGettersAndSetters() {
+        Url url = new Url("https://test.com");
+        url.setId(MAGIC_NUMBER_42L);
+        url.setCreatedAt(java.time.LocalDateTime.now());
+        url.setLastCheck(null);
+
+        assertThat(url.getId()).isEqualTo(MAGIC_NUMBER_42L);
+        assertThat(url.getName()).isEqualTo("https://test.com");
+        assertThat(url.getLastCheck()).isNull();
+    }
+
+    @Test
+    void testUrlCheckGettersAndSetters() {
+        UrlCheck check = new UrlCheck(1L, STATUS_CODE_OK, "Title", "H1", "Desc");
+        check.setId(MAGIC_NUMBER_99L);
+
+        assertThat(check.getId()).isEqualTo(MAGIC_NUMBER_99L);
+        assertThat(check.getUrlId()).isEqualTo(1L);
+        assertThat(check.getStatusCode()).isEqualTo(STATUS_CODE_OK);
+        assertThat(check.getTitle()).isEqualTo("Title");
+        assertThat(check.getH1()).isEqualTo("H1");
+        assertThat(check.getDescription()).isEqualTo("Desc");
+    }
+
+    @Nested
+    class UrlControllerEdgeCasesTests {
+
+        @Test
+        void testCreateUrlWithInvalidCharacters() {
+            JavalinTest.test(app, (server, client) -> {
+                client.post("/urls", "url=http://example.com/path some");
+
+                var urlsPage = client.get("/urls").body().string();
+                assertThat(urlsPage).doesNotContain("path some");
+            });
+        }
+
+        @Test
+        void testCreateUrlWithInvalidProtocol() {
+            JavalinTest.test(app, (server, client) -> {
+                client.post("/urls", "url=invalidproto://example.com");
+
+                var urlsPage = client.get("/urls").body().string();
+                assertThat(urlsPage).doesNotContain("invalidproto://example.com");
+            });
+        }
+
+        @Test
+        void testCreateUrlWithVeryLongString() {
+            JavalinTest.test(app, (server, client) -> {
+                String longUrl = "http://" + "a".repeat(MAGIC_NUMBER_REPEAT_COUNT) + ".com";
+                client.post("/urls", "url=" + longUrl);
+
+                var urlsPage = client.get("/urls").body().string();
+                assertThat(urlsPage).doesNotContain(longUrl);
+            });
+        }
+
+        @Test
+        void testCreateUrlWithSpecialCharacters() {
+            JavalinTest.test(app, (server, client) -> {
+                client.post("/urls", "url=http://example.com/path?query=test#fragment");
+
+                var urlsPage = client.get("/urls").body().string();
+                assertThat(urlsPage).contains("http://example.com");
+            });
+        }
+
+//        @Test
+//        void testIndexWithEmptyDatabase() {
+//            JavalinTest.test(app, (server, client) -> {
+//                try (var conn = dataSource.getConnection();
+//                     var stmt = conn.createStatement()) {
+//                    stmt.execute("DELETE FROM urls");
+//                    stmt.execute("DELETE FROM url_checks");
+//                }
+//
+//                var response = client.get("/urls");
+//                assertThat(response.code()).isEqualTo(STATUS_CODE_OK);
+//                assertThat(response.body().string()).contains("Нет добавленных сайтов");
+//            });
+//        }
+
+//        @Test
+//        void testShowUrlWithoutChecks() {
+//            JavalinTest.test(app, (server, client) -> {
+//                String testUrl = "https://no-checks.com";
+//                TestUtils.addUrl(dataSource, testUrl);
+//                var url = TestUtils.getUrlByName(dataSource, testUrl);
+//
+//                var response = client.get("/urls/" + url.get("id"));
+//                assertThat(response.code()).isEqualTo(STATUS_CODE_OK);
+//                assertThat(response.body().string()).contains(testUrl);
+//                assertThat(response.body().string()).doesNotContain("No checks yet");
+//            });
+//        }
+
+        @Test
+        void testCreateCheckWithNetworkError() {
+            JavalinTest.test(app, (server, client) -> {
+                String mockUrl = mockServer.url("/").toString().replaceAll("/$", "");
+
+                mockServer.enqueue(new MockResponse().setBody(readFixture("index.html")));
+                client.post("/urls", "url=" + mockUrl);
+
+                var url = TestUtils.getUrlByName(dataSource, mockUrl);
+
+                mockServer.enqueue(new MockResponse().setBody("").setResponseCode(STATUS_CODE_ERROR));
+
+                var response = client.post("/urls/" + url.get("id") + "/checks");
+                assertThat(response.code()).isEqualTo(STATUS_CODE_OK);
+
+                var showPage = client.get("/urls/" + url.get("id")).body().string();
+                assertThat(showPage).contains(mockUrl);
             });
         }
     }

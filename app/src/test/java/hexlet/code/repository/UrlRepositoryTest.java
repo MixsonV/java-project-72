@@ -114,4 +114,25 @@ class UrlRepositoryTest {
         assertThat(checks).isEmpty();
     }
 
+    @Test
+    void testGetEntitiesEmpty() throws SQLException {
+        try (var conn = dataSource.getConnection();
+             var stmt = conn.createStatement()) {
+            stmt.execute("DELETE FROM urls");
+        }
+
+        List<Url> urls = UrlRepository.getEntities();
+        assertThat(urls).isEmpty();
+    }
+
+    @Test
+    void testSaveUrlWithSpecialCharacters() throws SQLException {
+        Url url = new Url("https://example.com/path?query=test#fragment");
+        UrlRepository.save(url);
+
+        Optional<Url> found = UrlRepository.findById(url.getId());
+        assertThat(found).isPresent();
+        assertThat(found.get().getName()).contains("https://example.com");
+    }
+
 }

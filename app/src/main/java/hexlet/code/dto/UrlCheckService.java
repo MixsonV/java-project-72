@@ -6,7 +6,6 @@ import org.jsoup.nodes.Document;
 import kong.unirest.core.HttpResponse;
 import kong.unirest.core.Unirest;
 
-
 public final class UrlCheckService {
 
     public UrlCheck performCheck(String url) {
