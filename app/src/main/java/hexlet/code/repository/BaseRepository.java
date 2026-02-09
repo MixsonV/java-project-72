@@ -2,14 +2,8 @@ package hexlet.code.repository;
 
 import com.zaxxer.hikari.HikariDataSource;
 
+@SuppressWarnings("java:S1118")
 public class BaseRepository {
-    private static HikariDataSource dataSource;
+    public static HikariDataSource dataSource;
 
-    public static void setDataSource(HikariDataSource newDataSource) {
-        dataSource = newDataSource;
-    }
-
-    public static HikariDataSource getDataSource() {
-        return dataSource;
-    }
 }

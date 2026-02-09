@@ -1,44 +1,43 @@
 package hexlet.code.repository;
 
 import hexlet.code.model.UrlCheck;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UrlCheckRepository extends BaseRepository {
-    private static final int MAGIC_NUMBER_1 = 1;
-    private static final int MAGIC_NUMBER_2 = 2;
-    private static final int MAGIC_NUMBER_3 = 3;
-    private static final int MAGIC_NUMBER_4 = 4;
-    private static final int MAGIC_NUMBER_5 = 5;
-    private static final int MAGIC_NUMBER_6 = 6;
     private static final Logger LOGGER = LoggerFactory.getLogger(UrlCheckRepository.class);
-
+    private static final String ID = "id";
+    private static final String URL_ID = "url_id";
+    private static final String STATUS_CODE = "status_code";
+    private static final String TITLE = "title";
+    private static final String DESCRIPTION = "description";
+    private static final String CREATED_AT = "created_at";
+    private static final String H1 = "h1";
     public static void saveUrlCheck(UrlCheck urlCheck) throws SQLException {
         String sql = "INSERT INTO url_checks "
                 + "(url_id, status_code, title, h1, description, created_at) VALUES (?, ?, ?, ?, ?, ?)";
-        try (var conn = getDataSource().getConnection();
+        try (var conn = dataSource.getConnection();
              var preparedStatement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            preparedStatement.setLong(MAGIC_NUMBER_1, urlCheck.getUrlId());
-            preparedStatement.setInt(MAGIC_NUMBER_2, urlCheck.getStatusCode());
-            preparedStatement.setString(MAGIC_NUMBER_3, urlCheck.getTitle());
-            preparedStatement.setString(MAGIC_NUMBER_4, urlCheck.getH1());
-            preparedStatement.setString(MAGIC_NUMBER_5, urlCheck.getDescription());
+            preparedStatement.setLong(1, urlCheck.getUrlId());
+            preparedStatement.setInt(2, urlCheck.getStatusCode());
+            preparedStatement.setString(3, urlCheck.getTitle());
+            preparedStatement.setString(4, urlCheck.getH1());
+            preparedStatement.setString(5, urlCheck.getDescription());
             var createdAt = LocalDateTime.now();
-            preparedStatement.setTimestamp(MAGIC_NUMBER_6, Timestamp.valueOf(createdAt));
+            preparedStatement.setTimestamp(6, Timestamp.valueOf(createdAt));
 
             preparedStatement.executeUpdate();
             var generatedKeys = preparedStatement.getGeneratedKeys();
@@ -54,9 +53,10 @@ public class UrlCheckRepository extends BaseRepository {
 
     public static List<UrlCheck> findAllChecksByUrlId(Long urlId) throws SQLException {
         List<UrlCheck> checks = new ArrayList<>();
-        String sql = "SELECT * FROM url_checks WHERE url_id = ?";
+        String sql =
+                "SELECT id, url_id, status_code, title, h1, description, created_at FROM url_checks WHERE url_id = ?";
 
-        try (Connection conn = getDataSource().getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setLong(1, urlId);
@@ -64,13 +64,13 @@ public class UrlCheckRepository extends BaseRepository {
 
             while (rs.next()) {
                 UrlCheck check = new UrlCheck();
-                check.setId(rs.getLong("id"));
-                check.setUrlId(rs.getLong("url_id"));
-                check.setStatusCode(rs.getInt("status_code"));
-                check.setTitle(rs.getString("title"));
-                check.setH1(rs.getString("h1"));
-                check.setDescription(rs.getString("description"));
-                check.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                check.setId(rs.getLong(ID));
+                check.setUrlId(rs.getLong(URL_ID));
+                check.setStatusCode(rs.getInt(STATUS_CODE));
+                check.setTitle(rs.getString(TITLE));
+                check.setH1(rs.getString(H1));
+                check.setDescription(rs.getString(DESCRIPTION));
+                check.setCreatedAt(rs.getTimestamp(CREATED_AT).toLocalDateTime());
 
                 checks.add(check);
             }
@@ -78,56 +78,29 @@ public class UrlCheckRepository extends BaseRepository {
         return checks;
     }
 
-    public static Optional<UrlCheck> findLastCheckByUrlId(Long urlId) throws SQLException {
-        String sql = "SELECT * FROM url_checks WHERE url_id = ? ORDER BY created_at DESC LIMIT 1";
-
-        try (Connection conn = getDataSource().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setLong(1, urlId);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                UrlCheck check = new UrlCheck();
-                check.setId(rs.getLong("id"));
-                check.setUrlId(rs.getLong("url_id"));
-                check.setStatusCode(rs.getInt("status_code"));
-                check.setTitle(rs.getString("title"));
-                check.setH1(rs.getString("h1"));
-                check.setDescription(rs.getString("description"));
-                check.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-
-                return Optional.of(check);
-            }
-        }
-
-        return Optional.empty();
-    }
-
-    public static Map<Long, UrlCheck> getLastChecksForAllUrls() throws SQLException {
-        LOGGER.info("Getting last checks for all URLs");
-        String sql = "SELECT DISTINCT ON (url_id) * FROM url_checks ORDER BY url_id, created_at DESC";
-        var lastChecks = new HashMap<Long, UrlCheck>();
-        try (var conn = getDataSource().getConnection();
+    public static Map<Long, UrlCheck> findLatestChecks() throws SQLException {
+        var sql = "SELECT DISTINCT ON (url_id) id, url_id, status_code, title, h1, description, created_at"
+                + " from url_checks order by url_id DESC, id DESC";
+        try (var conn = dataSource.getConnection();
              var stmt = conn.prepareStatement(sql)) {
+
             var resultSet = stmt.executeQuery();
+            var result = new HashMap<Long, UrlCheck>();
             while (resultSet.next()) {
-                var listOfUrls = new UrlCheck();
-                listOfUrls.setId(resultSet.getLong("id"));
-                listOfUrls.setStatusCode(resultSet.getInt("status_code"));
-                listOfUrls.setTitle(resultSet.getString("title"));
-                listOfUrls.setH1(resultSet.getString("h1"));
-                listOfUrls.setDescription(resultSet.getString("description"));
-                listOfUrls.setCreatedAt(resultSet.getTimestamp("created_at").toLocalDateTime());
-                var urlId = resultSet.getLong("url_id");
-                listOfUrls.setUrlId(urlId);
-                lastChecks.put(urlId, listOfUrls);
+                var id = resultSet.getLong(ID);
+                var urlId = resultSet.getLong(URL_ID);
+                var statusCode = resultSet.getInt(STATUS_CODE);
+                var title = resultSet.getString(TITLE);
+                var h1 = resultSet.getString(H1);
+                var description = resultSet.getString(DESCRIPTION);
+                var createdAt = resultSet.getTimestamp(CREATED_AT).toLocalDateTime();
+                var check = new UrlCheck(statusCode, title, h1, description);
+                check.setId(id);
+                check.setUrlId(urlId);
+                check.setCreatedAt(createdAt);
+                result.put(urlId, check);
             }
-            return lastChecks;
-        } catch (SQLException e) {
-            LOGGER.error("Failed to get last checks for all URLs", e);
-            throw e;
+            return result;
         }
     }
-
 }

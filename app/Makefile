@@ -13,6 +13,13 @@ test:
 run:
 	./gradlew run
 
-run-dist: clean build install run
+report:
+	./gradlew jacocoTestReport
+
+sonar:
+	./gradlew sonar
+
+lint:
+	./gradlew checkstyleMain
 
 .PHONY: build

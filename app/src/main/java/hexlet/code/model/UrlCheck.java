@@ -1,80 +1,37 @@
 package hexlet.code.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
-public final class UrlCheck {
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+public class UrlCheck {
     private Long id;
+    private Long urlId;
     private int statusCode;
     private String title;
     private String h1;
     private String description;
-    private Long urlId;
     private LocalDateTime createdAt;
 
-    public UrlCheck() { }
-
-    public UrlCheck(Long newUrlId, int newStatusCode, String newTitle, String newH1, String newDescription) {
-        this.setUrlId(newUrlId);
-        this.setStatusCode(newStatusCode);
-        this.setTitle(newTitle);
-        this.setH1(newH1);
-        this.setDescription(newDescription);
+    public UrlCheck(Long urlId, int statusCode, String title, String h1, String description) {
+        this.urlId = urlId;
+        this.statusCode = statusCode;
+        this.title = title;
+        this.h1 = h1;
+        this.description = description;
     }
 
-    public void setId(Long newId) {
-        this.id = newId;
+    public UrlCheck(int statusCode, String title, String h1, String description) {
+        this.statusCode = statusCode;
+        this.title = title;
+        this.h1 = h1;
+        this.description = description;
     }
-
-    public void setStatusCode(int newStatusCode) {
-        this.statusCode = newStatusCode;
-    }
-
-    public void setTitle(String newTitle) {
-        this.title = newTitle;
-    }
-
-    public void setH1(String newH1) {
-        this.h1 = newH1;
-    }
-
-    public void setDescription(String newDescription) {
-        this.description = newDescription;
-    }
-
-    public void setUrlId(Long newUrlId) {
-        this.urlId = newUrlId;
-    }
-
-    public void setCreatedAt(LocalDateTime newCreatedAt) {
-        this.createdAt = newCreatedAt;
-    }
-
-    public Long getId() {
-        return this.id;
-    }
-
-    public int getStatusCode() {
-        return this.statusCode;
-    }
-
-    public String getTitle() {
-        return this.title;
-    }
-
-    public String getH1() {
-        return this.h1;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
-
-    public Long getUrlId() {
-        return this.urlId;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return this.createdAt;
-    }
-
 }
