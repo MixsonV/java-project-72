@@ -145,8 +145,8 @@ sonar {
         property("sonar.organization", "mixsonv")
         property("sonar.host.url", "https://sonarcloud.io")
         property ("sonar.login", "${System.getenv("SONAR_TOKEN")}")
-        property("sonar.java.binaries", "${buildDir}/classes/java/main")
+        property("sonar.java.binaries", "build/classes/java/main")
         property ("sonar.java.coveragePlugin", "jacoco")
-        property ("sonar.coverage.jacoco.xmlReportPaths", "${buildDir}/reports/jacoco/test/jacocoTestReport.xml")
+        property ("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
     }
 }
