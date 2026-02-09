@@ -37,7 +37,11 @@ dependencies {
     testImplementation("org.assertj:assertj-core:3.27.3")
     testImplementation(platform("org.junit:junit-bom:5.12.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.9.3")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+//    testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3")
+    testImplementation("io.javalin:javalin-testtools:6.7.0")
+//    testImplementation("io.javalin:javalin:6.7.0")
+    testImplementation("org.mockito:mockito-core:5.12.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

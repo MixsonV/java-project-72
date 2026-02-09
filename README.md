@@ -7,4 +7,28 @@
 
 # Знакомьтесь - это анализатор страниц!
 
+Проект представляет собой web-приложение для анализа сайтов на SEO-пригодность.
+
+**Сборка:**
+```java
+make build
+```
+**Тест:**
+```java
+make test
+```
+**Sonar:**
+```java
+make sonar
+```
+**CheckStyle:**
+```java
+make lint
+```
+**Запуск:**
+```java
+make run
+```
+
 ### Приложение задеплоено на Render: https://java-project-72-z69f.onrender.com
+
