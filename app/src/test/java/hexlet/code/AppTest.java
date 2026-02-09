@@ -1,154 +1,214 @@
 package hexlet.code;
 
-import hexlet.code.controller.UrlsController;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import hexlet.code.model.Url;
 import hexlet.code.model.UrlCheck;
-import hexlet.code.repository.UrlCheckRepository;
-import hexlet.code.repository.UrlRepository;
-import hexlet.code.util.NamedRoutes;
-import io.javalin.http.Context;
+import hexlet.code.utils.TestUtils;
+import io.javalin.Javalin;
+import io.javalin.testtools.JavalinTest;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+
 class AppTest {
-    private static final int STATUS_CODE_200 = 200;
-    private static final int STATUS_CODE_404 = 404;
-    private static final long ID_999L = 999L;
-    private MockWebServer mockWebServer;
-    private MockedStatic<UrlRepository> mockedUrlRepo;
-    private MockedStatic<UrlCheckRepository> mockedUrlCheckRepo;
+    private static MockWebServer mockServer;
+    private Javalin app;
+    private Map<String, Object> existingUrl;
+    private Map<String, Object> existingUrlCheck;
+    private HikariDataSource dataSource;
+
+    private static Path getFixturePath(String fileName) {
+        return Paths.get("src", "test", "resources", "fixtures", fileName)
+                .toAbsolutePath().normalize();
+    }
+
+    private static String readFixture(String fileName) throws IOException {
+        Path filePath = getFixturePath(fileName);
+        return Files.readString(filePath).trim();
+    }
+
+    private static String getDatabaseUrl() {
+        return System.getenv().getOrDefault("JDBC_DATABASE_URL", "jdbc:h2:mem:project");
+    }
+
+    @BeforeAll
+    public static void beforeAll() throws IOException {
+        mockServer = new MockWebServer();
+        MockResponse mockedResponse = new MockResponse()
+                .setBody(readFixture("index.html"));
+        mockServer.enqueue(mockedResponse);
+        mockServer.start();
+    }
+
+    @AfterAll
+    public static void afterAll() throws IOException {
+        mockServer.shutdown();
+    }
 
     @BeforeEach
-    void setUp() throws IOException {
-        mockWebServer = new MockWebServer();
-        mockWebServer.start();
-        mockedUrlRepo = Mockito.mockStatic(UrlRepository.class);
-        mockedUrlCheckRepo = Mockito.mockStatic(UrlCheckRepository.class);
-    }
+    public void setUp() throws IOException, SQLException {
+        app = App.getApp();
 
-    @AfterEach
-    void tearDown() throws IOException {
-        mockWebServer.shutdown();
-        mockedUrlRepo.close();
-        mockedUrlCheckRepo.close();
-    }
+        var hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(getDatabaseUrl());
 
-    @Test
-    void testIndexPage() throws SQLException {
-        // Подготовка данных
-        Url mockUrl = new Url(1L, "https://example.com", null);
-        List<Url> urls = List.of(mockUrl);
-        when(UrlRepository.getEntities()).thenReturn(urls);
-        when(UrlCheckRepository.findLastCheckByUrlId(eq(1L))).thenReturn(Optional.empty());
+        dataSource = new HikariDataSource(hikariConfig);
 
-        // Мокируем Context
-        Context ctx = Mockito.mock(Context.class);
+        var schema = AppTest.class.getClassLoader().getResource("schema.sql");
+        var file = new File(schema.getFile());
+        var sql = Files.lines(file.toPath())
+                .collect(Collectors.joining("\n"));
 
-        // Вызываем обработчик
-        UrlsController.index(ctx);
+        try (var connection = dataSource.getConnection();
+             var statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
 
-        // Проверяем, что render был вызван
-        verify(ctx, times(1)).render(any(String.class), any());
-        // Проверяем вызов репозитория
-        mockedUrlRepo.verify(() -> UrlRepository.getEntities(), times(1));
+        String url = "https://en.hexlet.io";
+
+        TestUtils.addUrl(dataSource, url);
+        existingUrl = TestUtils.getUrlByName(dataSource, url);
+
+        TestUtils.addUrlCheck(dataSource, (long) existingUrl.get("id"));
+        existingUrlCheck = TestUtils.getUrlCheck(dataSource, (long) existingUrl.get("id"));
     }
 
     @Test
-    void testCreateValidUrl() throws SQLException {
-        String validUrl = "https://example.com";
-        when(UrlRepository.existsByName(anyString())).thenReturn(false);
+    public void testUrlConstructor() {
+        Long id = 1L;
+        String name = "example";
+        LocalDateTime createdAt = LocalDateTime.of(2023, 10, 30, 12, 0);
 
-        Context ctx = Mockito.mock(Context.class);
-        when(ctx.formParam("url")).thenReturn(validUrl);
+        Url url = new Url(id, name, createdAt);
 
-        UrlsController.create(ctx);
-
-        verify(ctx, times(1)).redirect(anyString());
-        mockedUrlRepo.verify(() -> UrlRepository.existsByName("https://example.com"), times(1));
-        mockedUrlRepo.verify(() -> UrlRepository.save(any(Url.class)), times(1));
+        assertEquals(id, url.getId());
+        assertEquals(name, url.getName());
+        assertEquals(createdAt, url.getCreatedAt());
     }
 
     @Test
-    void testCreateInvalidUrl() throws SQLException {
-        String invalidUrl = "not-a-url";
-        Context ctx = Mockito.mock(Context.class);
-        when(ctx.formParam("url")).thenReturn(invalidUrl);
-
-        UrlsController.create(ctx);
-
-        verify(ctx, times(1)).redirect(eq(NamedRoutes.rootPath()));
-        mockedUrlRepo.verify(() -> UrlRepository.save(any(Url.class)), never());
-    }
-
-    @Test
-    void testCreateDuplicateUrl() throws SQLException {
-        String duplicateUrl = "https://existing-site.com";
-        when(UrlRepository.existsByName(eq(duplicateUrl))).thenReturn(true);
-
-        Context ctx = Mockito.mock(Context.class);
-        when(ctx.formParam("url")).thenReturn(duplicateUrl);
-
-        UrlsController.create(ctx);
-
-        verify(ctx, times(1)).redirect(eq(NamedRoutes.rootPath()));
-        mockedUrlRepo.verify(() -> UrlRepository.existsByName(duplicateUrl), times(1));
-        mockedUrlRepo.verify(() -> UrlRepository.save(any(Url.class)), never());
-    }
-
-    @Test
-    void testCreateCheckSuccess() throws Exception {
+    public void testUrlCheckConstructor() {
         Long urlId = 1L;
-        String urlName = "https://example.com";
-        Url existingUrl = new Url(urlId, urlName, null);
+        int statusCode = 200;
+        String title = "example title";
+        String h1 = "header 1";
+        String description = "some description";
 
-        when(UrlRepository.findById(eq(urlId))).thenReturn(Optional.of(existingUrl));
+        UrlCheck urlCheck = new UrlCheck(urlId, statusCode, title, h1, description);
 
-        mockWebServer.enqueue(new MockResponse()
-                .setResponseCode(STATUS_CODE_200)
-                .setBody("<html><head><title>OK</title></head><body><h1>H1</h1></body></html>"));
-
-        Context ctx = Mockito.mock(Context.class);
-        when(ctx.pathParam("id")).thenReturn(urlId.toString());
-
-        UrlsController.createCheck(ctx);
-
-        verify(ctx, times(1)).redirect(anyString());
-        mockedUrlCheckRepo.verify(() -> UrlCheckRepository.saveUrlCheck(any(UrlCheck.class)), times(1));
+        assertEquals(urlId, urlCheck.getUrlId());
+        assertEquals(statusCode, urlCheck.getStatusCode());
+        assertEquals(title, urlCheck.getTitle());
+        assertEquals(h1, urlCheck.getH1());
+        assertEquals(description, urlCheck.getDescription());
     }
 
-    @Test
-    void testCreateCheckUrlNotFound() throws SQLException {
-        Long nonExistentUrlId = ID_999L;
-        when(UrlRepository.findById(eq(nonExistentUrlId))).thenReturn(Optional.empty());
-
-        Context ctx = Mockito.mock(Context.class);
-        when(ctx.pathParam("id")).thenReturn(nonExistentUrlId.toString());
-
-        when(ctx.status(eq(STATUS_CODE_404))).thenReturn(ctx);
-        UrlsController.createCheck(ctx);
-
-        verify(ctx, times(1)).status(eq(STATUS_CODE_404));
-        verify(ctx, times(1)).result(anyString());
-        mockedUrlRepo.verify(() -> UrlRepository.findById(nonExistentUrlId), times(1));
+    @Nested
+    class RootTest {
+        @Test
+        void testIndex() {
+            JavalinTest.test(app, (server, client) -> {
+                assertThat(client.get("/").code()).isEqualTo(200);
+            });
+        }
     }
+
+    @Nested
+    class UrlTest {
+
+        @Test
+        void testIndex() {
+            JavalinTest.test(app, (server, client) -> {
+                var response = client.get("/urls");
+                assertThat(response.code()).isEqualTo(200);
+                assertThat(response.body().string())
+                        .contains(existingUrl.get("name").toString())
+                        .contains(existingUrlCheck.get("status_code").toString());
+            });
+        }
+
+        @Test
+        void testShow() {
+            JavalinTest.test(app, (server, client) -> {
+                var response = client.get("/urls/" + existingUrl.get("id"));
+                assertThat(response.code()).isEqualTo(200);
+                assertThat(response.body().string())
+                        .contains(existingUrl.get("name").toString())
+                        .contains(existingUrlCheck.get("status_code").toString());
+            });
+        }
+
+        @Test
+        void testStore() {
+
+            String inputUrl = "https://ru.hexlet.io";
+
+            JavalinTest.test(app, (server, client) -> {
+                var requestBody = "url=" + inputUrl;
+                assertThat(client.post("/urls", requestBody).code()).isEqualTo(200);
+
+                var response = client.get("/urls");
+                assertThat(response.code()).isEqualTo(200);
+                assertThat(response.body().string())
+                        .contains(inputUrl);
+
+                var actualUrl = TestUtils.getUrlByName(dataSource, inputUrl);
+                assertThat(actualUrl).isNotNull();
+                assertThat(actualUrl.get("name").toString()).isEqualTo(inputUrl);
+            });
+        }
+    }
+
+    @Nested
+    class UrlCheckTest {
+
+        @Test
+        void testStore() {
+            String url = mockServer.url("/").toString().replaceAll("/$", "");
+
+            JavalinTest.test(app, (server, client) -> {
+                var requestBody = "url=" + url;
+                assertThat(client.post("/urls", requestBody).code()).isEqualTo(200);
+
+                var actualUrl = TestUtils.getUrlByName(dataSource, url);
+                assertThat(actualUrl).isNotNull();
+                System.out.println("\n!!!!!");
+                System.out.println(actualUrl);
+
+                System.out.println("\n");
+                assertThat(actualUrl.get("name").toString()).isEqualTo(url);
+
+                client.post("/urls/" + actualUrl.get("id") + "/checks");
+
+                assertThat(client.get("/urls/" + actualUrl.get("id")).code())
+                        .isEqualTo(200);
+
+                var actualCheck = TestUtils.getUrlCheck(dataSource, (long) actualUrl.get("id"));
+                assertThat(actualCheck).isNotNull();
+                assertThat(actualCheck.get("title")).isEqualTo("Test page");
+                assertThat(actualCheck.get("h1")).isEqualTo("Do not expect a miracle, miracles yourself!");
+                assertThat(actualCheck.get("description")).isEqualTo("statements of great people");
+            });
+        }
+    }
+
 }
