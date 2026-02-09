@@ -1,29 +1,36 @@
-name: Deploy to Render
-
+name: SonarQube
 on:
   push:
     branches:
-      - main  # или другая ваша основная ветка
-
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
 jobs:
-  build-and-deploy:
+  build:
+    name: Build and analyze
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install dependencies
-        working-directory: ./app
-        run: |
-          ./gradlew build
-
-      - name: Deploy to Render
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'zulu' # Alternative distribution options are available
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+      - name: Build and analyze
         env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
-        run: |
-          curl -X POST \
-          -H "Accept: application/json" \
-          -H "Authorization: Bearer $RENDER_API_KEY" \
-          "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys"
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: cd app && ./gradlew build sonar --info
