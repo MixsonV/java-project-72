@@ -141,7 +141,6 @@ tasks.jacocoTestReport {
     }
 }
 
-
 tasks.withType<Test> {
     finalizedBy(tasks.jacocoTestReport)
 }
