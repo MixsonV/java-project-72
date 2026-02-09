@@ -100,6 +100,13 @@ tasks.test {
     useJUnitPlatform()
 }
 
+jte {
+    sourceDirectory.set(file("src/main/resources/templates").toPath())
+    targetDirectory.set(file("build/generated/jte").toPath())
+    contentType.set(gg.jte.ContentType.Html)
+    binaryStaticContent.set(false)
+}
+
 checkstyle {
     toolVersion = "9.0"
     configDirectory.set(file("config/checkstyle"))
