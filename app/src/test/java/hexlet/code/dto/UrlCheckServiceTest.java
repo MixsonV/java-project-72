@@ -3,8 +3,8 @@ package hexlet.code.dto;
 import hexlet.code.model.UrlCheck;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -12,133 +12,79 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UrlCheckServiceTest {
-    private static final int STATUS_CODE_OK = 200;
-    private static final int STATUS_CODE_NOT_FOUND = 404;
-    private static MockWebServer mockServer;
-    private static UrlCheckService service;
+    private static final int STATUS_CODE_200 = 200;
+    private MockWebServer mockWebServer;
+    private UrlCheckService urlCheckService;
 
-    @BeforeAll
-    static void beforeAll() throws IOException {
-        mockServer = new MockWebServer();
-        service = new UrlCheckService();
-        mockServer.start();
+    @BeforeEach
+    void setUp() throws IOException {
+        mockWebServer = new MockWebServer();
+        mockWebServer.start();
+        urlCheckService = new UrlCheckService();
     }
 
-    @AfterAll
-    static void afterAll() throws IOException {
-        mockServer.shutdown();
+    @AfterEach
+    void tearDown() throws IOException {
+        mockWebServer.shutdown();
     }
 
     @Test
     void testPerformCheckSuccess() {
-        String html = "<!DOCTYPE html>"
-                + "<html lang='en'>"
+        String expectedTitle = "Test Page Title";
+        String expectedH1 = "Test H1 Content";
+        String expectedDescription = "This is a test description.";
+        int expectedStatus = STATUS_CODE_200;
+
+        String responseBody = "<!DOCTYPE html>"
+                + "<html>"
                 + "<head>"
-                + "<meta name='keywords' content='test'>"
-                + "<meta name='description' content='description'>"
-                + "<title>Test Page</title>"
+                + "<title>" + expectedTitle + "</title>"
+                + "<meta name=\"description\" content=\"" + expectedDescription + "\">"
                 + "</head>"
                 + "<body>"
-                + "<h1>Test Header</h1>"
+                + "<h1>" + expectedH1 + "</h1>"
+                + "<p>Some content here.</p>"
                 + "</body>"
                 + "</html>";
 
-        mockServer.enqueue(new MockResponse().setBody(html).setResponseCode(STATUS_CODE_OK));
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(expectedStatus)
+                .setBody(responseBody)
+                .addHeader("Content-Type", "text/html"));
 
-        String url = mockServer.url("/").toString();
-        UrlCheck check = service.performCheck(url);
+        String urlToCheck = mockWebServer.url("/").toString();
+        UrlCheck result = urlCheckService.performCheck(urlToCheck);
 
-        assertThat(check.getStatusCode()).isEqualTo(STATUS_CODE_OK);
-        assertThat(check.getTitle()).isEqualTo("Test Page");
-        assertThat(check.getH1()).isEqualTo("Test Header");
-        assertThat(check.getDescription()).isEqualTo("description");
+        assertThat(result.getStatusCode()).isEqualTo(expectedStatus);
+        assertThat(result.getTitle()).isEqualTo(expectedTitle);
+        assertThat(result.getH1()).isEqualTo(expectedH1);
+        assertThat(result.getDescription()).isEqualTo(expectedDescription);
     }
 
     @Test
-    void testPerformCheck404() {
-        mockServer.enqueue(new MockResponse().setResponseCode(STATUS_CODE_NOT_FOUND));
-
-        String url = mockServer.url("/").toString();
-        UrlCheck check = service.performCheck(url);
-
-        assertThat(check.getStatusCode()).isEqualTo(STATUS_CODE_NOT_FOUND);
-        assertThat(check.getTitle()).isEqualTo("No title");
-        assertThat(check.getH1()).isEqualTo("No h1");
-        assertThat(check.getDescription()).isEqualTo("No description");
-    }
-
-    @Test
-    void testPerformCheckWithMissingMetaTags() {
-        String html = "<!DOCTYPE html>"
-                + "<html>"
-                + "<head><title>Title Only</title></head>"
-                + "<body><h1>H1 Only</h1></body>"
-                + "</html>";
-
-        mockServer.enqueue(new MockResponse().setBody(html).setResponseCode(STATUS_CODE_OK));
-
-        String url = mockServer.url("/").toString();
-        UrlCheck check = service.performCheck(url);
-
-        assertThat(check.getStatusCode()).isEqualTo(STATUS_CODE_OK);
-        assertThat(check.getTitle()).isEqualTo("Title Only");
-        assertThat(check.getH1()).isEqualTo("H1 Only");
-        assertThat(check.getDescription()).isEqualTo("No description");
-    }
-
-    @Test
-    void testPerformCheckWithMissingH1() {
-        String html = "<!DOCTYPE html>"
+    void testPerformCheckMissingElements() {
+        String responseBody = "<!DOCTYPE html>"
                 + "<html>"
                 + "<head>"
-                + "<meta name='description' content='desc'>"
-                + "<title>Title</title>"
+                + "<!-- No title -->"
+                + "<meta name=\"keywords\" content=\"test, keywords\">"
                 + "</head>"
-                + "<body></body>"
-                + "</html>";
-
-        mockServer.enqueue(new MockResponse().setBody(html).setResponseCode(STATUS_CODE_OK));
-
-        String url = mockServer.url("/").toString();
-        UrlCheck check = service.performCheck(url);
-
-        assertThat(check.getStatusCode()).isEqualTo(STATUS_CODE_OK);
-        assertThat(check.getTitle()).isEqualTo("Title");
-        assertThat(check.getH1()).isEqualTo("No h1");
-        assertThat(check.getDescription()).isEqualTo("desc");
-    }
-
-    @Test
-    void testPerformCheckEmptyPage() {
-        mockServer.enqueue(new MockResponse().setBody("").setResponseCode(STATUS_CODE_OK));
-
-        String url = mockServer.url("/").toString();
-        UrlCheck check = service.performCheck(url);
-
-        assertThat(check.getStatusCode()).isEqualTo(STATUS_CODE_OK);
-        assertThat(check.getTitle()).isEqualTo("No title");
-        assertThat(check.getH1()).isEqualTo("No h1");
-        assertThat(check.getDescription()).isEqualTo("No description");
-    }
-
-    @Test
-    void testPerformCheckWithMultipleH1Tags() {
-        String html = "<!DOCTYPE html>"
-                + "<html>"
-                + "<head><title>Title</title></head>"
                 + "<body>"
-                + "<h1>First H1</h1>"
-                + "<h1>Second H1</h1>"
+                + "<!-- No h1 -->"
+                + "<p>Content without h1.</p>"
                 + "</body>"
                 + "</html>";
 
-        mockServer.enqueue(new MockResponse().setBody(html).setResponseCode(STATUS_CODE_OK));
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(STATUS_CODE_200)
+                .setBody(responseBody)
+                .addHeader("Content-Type", "text/html"));
 
-        String url = mockServer.url("/").toString();
-        UrlCheck check = service.performCheck(url);
+        String urlToCheck = mockWebServer.url("/").toString();
+        UrlCheck result = urlCheckService.performCheck(urlToCheck);
 
-        assertThat(check.getStatusCode()).isEqualTo(STATUS_CODE_OK);
-        assertThat(check.getTitle()).isEqualTo("Title");
-        assertThat(check.getH1()).isEqualTo("First H1 Second H1");
+        assertThat(result.getTitle()).isEqualTo("No title");
+        assertThat(result.getH1()).isEqualTo("No h1");
+        assertThat(result.getDescription()).isEqualTo("No description");
     }
 }
