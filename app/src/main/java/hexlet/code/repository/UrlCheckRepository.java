@@ -13,11 +13,10 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class UrlCheckRepository extends BaseRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UrlCheckRepository.class);
     private static final String ID = "id";
     private static final String URL_ID = "url_id";
     private static final String STATUS_CODE = "status_code";
@@ -46,6 +45,7 @@ public class UrlCheckRepository extends BaseRepository {
                 urlCheck.setId(generatedKeys.getLong(1));
                 urlCheck.setCreatedAt(createdAt);
             } else {
+                log.info("DB have not returned an id after saving an entity");
                 throw new SQLException("DB have not returned an id after saving an entity");
             }
         }

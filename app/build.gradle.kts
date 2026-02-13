@@ -2,7 +2,6 @@ plugins {
     id("com.github.ben-manes.versions") version "0.53.0"
     id("org.sonarqube") version "7.2.2.6593"
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("io.freefair.lombok") version "8.13.1"
     id("gg.jte.gradle") version "3.2.2"
     application
     checkstyle
@@ -82,9 +81,10 @@ dependencies {
     implementation ("com.konghq:unirest-java:$unirestVersion")
     implementation ("org.jsoup:jsoup:$jsoupVersion")
 
-    annotationProcessor ("org.projectlombok:lombok:$lombokVersion")
-
-    compileOnly ("org.projectlombok:lombok:$lombokVersion")
+    compileOnly("org.projectlombok:lombok:$lombokVersion")
+    annotationProcessor("org.projectlombok:lombok:$lombokVersion")
+    testCompileOnly("org.projectlombok:lombok:$lombokVersion")
+    testAnnotationProcessor("org.projectlombok:lombok:$lombokVersion")
 
     testImplementation("org.assertj:assertj-core:$assertjCoreVersion")
     testImplementation(platform("org.junit:junit-bom:$junitBomVersion"))
