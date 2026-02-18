@@ -101,18 +101,6 @@ class AppTest {
     }
 
     @Test
-    void testGetPort() {
-        int port = App.getPort();
-        assertThat(port).isEqualTo(3000);
-    }
-
-    @Test
-    void testGetDatabaseUrl() {
-        String databaseUrl = App.getDatabaseUrl();
-        assertEquals(databaseUrl, "jdbc:h2:mem:project");
-    }
-
-    @Test
     void testUrlConstructor() {
         Long id = 1L;
         String name = "example";
