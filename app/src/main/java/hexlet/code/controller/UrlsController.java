@@ -47,7 +47,6 @@ public final class UrlsController {
 
     @SuppressWarnings("java:S1192")
     public static void index(Context ctx) throws SQLException {
-//        try {
         var urls = UrlRepository.getEntities();
         Map<Long, UrlCheck> latestChecks = UrlCheckRepository.findLatestChecks();
         for (Url url : urls) {
@@ -60,10 +59,6 @@ public final class UrlsController {
         var page = new UrlsPage(urls);
         page.setFlash(ctx.consumeSessionAttribute(FLASH));
         ctx.render("urls/index.jte", model("page", page));
-//        } catch (SQLException e) {
-//            log.error("Server error occurred", e);
-//            ctx.status(500).result("Server error occurred");
-//        }
     }
 
     public static void build(Context ctx) {
@@ -121,15 +116,9 @@ public final class UrlsController {
 
         UrlCheckService urlCheckService = new UrlCheckService();
 
-//        try {
         UrlCheck newCheck = urlCheckService.performCheck(url.getName());
         newCheck.setUrlId(id);
         saveUrlCheck(newCheck);
         ctx.redirect(NamedRoutes.urlPath(id));
-//        } catch (Exception e) {
-//            log.error("Error during verification URL: {}", url.getName(), e);
-//            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR);
-//            ctx.result("Error during verification URL");
-//        }
     }
 }
