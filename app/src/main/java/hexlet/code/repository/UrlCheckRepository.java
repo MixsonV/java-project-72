@@ -47,7 +47,6 @@ public class UrlCheckRepository extends BaseRepository {
                 urlCheck.setCreatedAt(createdAt);
             } else {
                 log.info("DB have not returned an id after saving an entity");
-                throw new SQLException("DB have not returned an id after saving an entity");
             }
         }
     }
@@ -88,17 +87,14 @@ public class UrlCheckRepository extends BaseRepository {
             var resultSet = stmt.executeQuery();
             var result = new HashMap<Long, UrlCheck>();
             while (resultSet.next()) {
-                var id = resultSet.getLong(ID);
-                var urlId = resultSet.getLong(URL_ID);
-                var statusCode = resultSet.getInt(STATUS_CODE);
-                var title = resultSet.getString(TITLE);
-                var h1 = resultSet.getString(H1);
-                var description = resultSet.getString(DESCRIPTION);
-                var createdAt = resultSet.getTimestamp(CREATED_AT).toLocalDateTime();
-                var check = new UrlCheck(statusCode, title, h1, description);
-                check.setId(id);
-                check.setUrlId(urlId);
-                check.setCreatedAt(createdAt);
+                Long id = resultSet.getLong(ID);
+                Long urlId = resultSet.getLong(URL_ID);
+                int statusCode = resultSet.getInt(STATUS_CODE);
+                String title = resultSet.getString(TITLE);
+                String h1 = resultSet.getString(H1);
+                String description = resultSet.getString(DESCRIPTION);
+                LocalDateTime createdAt = resultSet.getTimestamp(CREATED_AT).toLocalDateTime();
+                var check = new UrlCheck(id, urlId, statusCode, title, h1, description, createdAt);
                 result.put(urlId, check);
             }
             return result;
