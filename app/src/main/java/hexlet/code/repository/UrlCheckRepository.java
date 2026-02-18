@@ -24,6 +24,7 @@ public class UrlCheckRepository extends BaseRepository {
     private static final String DESCRIPTION = "description";
     private static final String CREATED_AT = "created_at";
     private static final String H1 = "h1";
+
     public static void saveUrlCheck(UrlCheck urlCheck) throws SQLException {
         String sql = "INSERT INTO url_checks "
                 + "(url_id, status_code, title, h1, description, created_at) VALUES (?, ?, ?, ?, ?, ?)";

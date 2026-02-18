@@ -61,13 +61,43 @@ public final class App {
         return app;
     }
 
+    public static Javalin getApp(HikariDataSource dataSource) throws IOException, SQLException {
+        var sql = readResourceFile("schema.sql");
+
+        log.info(sql);
+        try (var connection = dataSource.getConnection();
+             var statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
+
+        BaseRepository.dataSource = dataSource;
+
+        Javalin app = Javalin.create(config -> {
+            config.bundledPlugins.enableDevLogging();
+            config.fileRenderer(new JavalinJte(createTemplateEngine()));
+        });
+
+        app.before(ctx -> {
+            ctx.contentType("text/html; charset=utf-8");
+        });
+
+        app.get(NamedRoutes.rootPath(), UrlsController::build);
+        app.post(NamedRoutes.urlsPath(), UrlsController::create);
+
+        app.get(NamedRoutes.urlsPath(), UrlsController::index);
+        app.get(NamedRoutes.urlPath("{id}"), UrlsController::show);
+        app.post("/urls/{id}/checks", UrlsController::createCheck);
+
+        return app;
+    }
+
     private static int getPort() {
         String port = System.getenv().getOrDefault("PORT", "3000");
         return Integer.parseInt(port);
     }
 
     private static String getDatabaseUrl() {
-        return System.getenv().getOrDefault("DATABASE_URL", "jdbc:h2:mem:project");
+        return System.getenv().getOrDefault("JDBC_DATABASE_URL", "jdbc:h2:mem:project");
     }
 
     private static String readResourceFile(String fileName) throws IOException {
